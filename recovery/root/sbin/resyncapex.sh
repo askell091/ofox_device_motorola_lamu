@@ -34,6 +34,25 @@ is_mounted() {
     grep -q " $1 " /proc/mounts
 }
 
+mount_metadata() {
+    is_mounted /metadata && return 0
+
+    metadata_block="/dev/block/by-name/metadata"
+    if [ ! -b "${metadata_block}" ]; then
+        log_msg "Metadata block device ${metadata_block} is unavailable"
+        return 1
+    fi
+
+    mkdir -p /metadata
+    if ! mount -t f2fs -o rw,nosuid,nodev,noatime,discard \
+        "${metadata_block}" /metadata; then
+        log_msg "Unable to mount the real metadata partition"
+        return 1
+    fi
+
+    return 0
+}
+
 run16() {
     LD_LIBRARY_PATH="${runtime_libs}" "${linker16}" "$@"
 }
@@ -113,6 +132,22 @@ if [ ! -x "${linker16}" ] || \
    [ ! -x /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustonic ] || \
    [ ! -x /vendor/bin/hw/android.hardware.gatekeeper-service.trustonic ]; then
     log_msg "Android 16 Trustonic runtime is unavailable; leaving stock recovery services active"
+    exit 1
+fi
+
+# This hook runs synchronously before recovery reaches its normal metadata
+# mount. Android 16 vold needs the persistent metadata-encryption files now,
+# so mount the real partition here instead of racing recovery's later mount.
+if ! mount_metadata; then
+    exit 1
+fi
+
+metadata_key_dir="/metadata/vold/metadata_encryption/key"
+if [ ! -s "${metadata_key_dir}/version" ] || \
+   [ ! -s "${metadata_key_dir}/encrypted_key" ] || \
+   [ ! -s "${metadata_key_dir}/keymaster_key_blob" ] || \
+   [ ! -s "${metadata_key_dir}/secdiscardable" ]; then
+    log_msg "Persistent metadata-encryption key files are unavailable"
     exit 1
 fi
 

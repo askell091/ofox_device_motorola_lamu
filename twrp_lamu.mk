@@ -30,6 +30,7 @@ PRODUCT_PACKAGES += \
     fsck.f2fs.vendor_ramdisk \
     init_second_stage.recovery \
     init.environ.rc \
+    lamu_gatekeeper16 \
     ld.config.recovery.txt \
     linker.recovery \
     recovery \

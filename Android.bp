@@ -5,3 +5,19 @@
 
 soong_namespace {
 }
+
+cc_binary {
+    name: "lamu_gatekeeper16",
+    srcs: ["crypto/lamu_gatekeeper16.cpp"],
+    recovery_available: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    shared_libs: [
+        "libbase",
+        "libbinder",
+        "libgatekeeper_aidl",
+        "libutils",
+    ],
+}
