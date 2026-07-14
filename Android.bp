@@ -30,9 +30,13 @@ cc_binary {
         local_include_dirs: ["crypto/aidl"],
     },
     shared_libs: [
+        "android.hardware.security.keymint-V1-ndk_platform",
+        "android.system.keystore2-V1-ndk_platform",
         "libbase",
         "libbinder",
+        "libbinder_ndk",
         "libcutils",
+        "libkeymint_support",
         "liblog",
         "libutils",
     ],

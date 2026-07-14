@@ -168,7 +168,10 @@ fi
 
 mkdir -p /mnt/vendor/persist
 if ! grep -q " /mnt/vendor/persist " /proc/mounts; then
-    mount -t ext4 -o ro,nosuid,nodev,noatime \
+    # Trustonic Gatekeeper updates mcRegistry/failure_records.dat after each
+    # verification, including successful ones. A read-only persist mount makes
+    # the HAL report a password failure even when the credential is correct.
+    mount -t ext4 -o rw,nosuid,nodev,noatime \
         /dev/block/by-name/persist /mnt/vendor/persist
 fi
 
