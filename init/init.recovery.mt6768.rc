@@ -6,3 +6,34 @@ on init
     # The lamu kernel has no configfs MTP function. Prevent recovery from
     # replacing the working ADB gadget with an unavailable MTP gadget.
     setprop mtp.crash_check 1
+
+# The proprietary lamu KeyMint/Gatekeeper services target the Android 16
+# runtime. They cannot be linked by fox_12.1's Android 12 linker, so the
+# synchronous resyncapex hook starts these services through the mounted
+# system bootstrap linker before metadata decryption begins.
+service lamu-mobicore /vendor/bin/mcDriverDaemon --P1 /mnt/vendor/persist/mcRegistry
+    disabled
+    user root
+    group root system
+    seclabel u:r:recovery:s0
+
+service lamu-servicemanager16 /system_root/system/bin/bootstrap/linker64 /system_root/system/bin/servicemanager
+    disabled
+    user root
+    group root
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/system_root/system/lib64/bootstrap
+
+service lamu-keymint16 /system_root/system/bin/bootstrap/linker64 /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustonic
+    disabled
+    user root
+    group root system
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/system_root/system/lib64/bootstrap
+
+service lamu-gatekeeper16 /system_root/system/bin/bootstrap/linker64 /vendor/bin/hw/android.hardware.gatekeeper-service.trustonic
+    disabled
+    user root
+    group root system
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/system_root/system/lib64/bootstrap

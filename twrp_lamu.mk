@@ -42,6 +42,7 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/init/init.recovery.mt6768.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.mt6768.rc \
+    $(DEVICE_PATH)/recovery/root/sbin/resyncapex.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/resyncapex.sh \
     $(DEVICE_PATH)/recovery/root/vendor/firmware/ILITEK_FW.hex:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/firmware/ILITEK_FW.hex \
     $(DEVICE_PATH)/recovery/root/vendor/firmware/chipone_firmware.bin:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/firmware/chipone_firmware.bin \
     $(DEVICE_PATH)/recovery/root/vendor/firmware/chipone_limit.bin:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/firmware/chipone_limit.bin \

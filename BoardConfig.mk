@@ -120,8 +120,17 @@ TWRP_INCLUDE_LOGCAT := true
 TW_INCLUDE_RESETPROP := true
 TW_INCLUDE_LIBRESETPROP := true
 TW_INCLUDE_REPACKTOOLS := true
-TW_EXCLUDE_APEX := true
 TW_NO_FASTBOOT_BOOT := true
+
+# Crypto / FBE
+#
+# LineageOS 23.2 uses FBE v2 plus metadata encryption on userdata. Enabling
+# crypto in the current fox_12.1 core also enables its FBE and metadata
+# decryption implementations. Keep system and vendor mounted while recovery
+# negotiates with the device KeyMint and Gatekeeper services.
+TW_INCLUDE_CRYPTO := true
+TW_USE_FSCRYPT_POLICY := 2
+TW_USES_VENDOR_LIBS := true
 
 # Vendor ramdisk modules extracted from the matching LineageOS 23.2 image
 BOARD_KERNEL_MODULE_DIR := $(KERNEL_PREBUILT_PATH)/modules

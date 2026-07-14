@@ -45,3 +45,30 @@ vibration, flashlight, fastbootd, reboot targets, and decryption prompt.
 If recovery does not boot, record the exact flashing command, active slot,
 host fastboot output, and the visible behavior (black screen, logo, reboot, or
 bootloader fallback).
+
+## Phase 2: metadata/FBE decryption
+
+The first crypto-enabled build starts the installed Android 16 Trustonic
+KeyMint and Gatekeeper through a compatibility launcher. Do not format or wipe
+`/data` when testing it. A failed mount is a diagnostic result, not evidence
+that userdata is corrupt.
+
+After ADB becomes available, collect:
+
+```bash
+adb shell getprop ro.orangefox.crypto_enabled
+adb shell getprop lamu.crypto.compat.ready
+adb shell getprop ro.vendor.trustonic.ready
+adb shell getprop ro.crypto.fs_crypto_blkdev
+adb shell ps -A | grep -E 'mcDriverDaemon|linker64|keystore2|servicemanager'
+adb shell mount | grep -E ' /data | /metadata | /odm | /vendor | /system_root '
+adb shell ls -la /data/media/0
+adb pull /tmp/recovery.log recovery-crypto.log
+adb logcat -d > logcat-crypto.txt
+adb shell dmesg > dmesg-crypto.txt
+```
+
+Expected compatibility properties are `ro.orangefox.crypto_enabled=1`,
+`lamu.crypto.compat.ready=1`, and `ro.vendor.trustonic.ready=true`. If the UI
+stays at the OrangeFox logo, leave the device connected for at least 30
+seconds and collect the three logs above before rebooting.
