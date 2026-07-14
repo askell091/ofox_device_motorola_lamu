@@ -142,7 +142,7 @@ index d9f034b..2fbc36c 100755
 -											auto binder_result = service->addAuthToken(authToken);
 -										}
 -									}
--				 );
+-								 );
 +			GKResponse gkResponse = GKResponse::error();
 +			bool gatekeeper_ok = false;
 +			bool android16_compat =
