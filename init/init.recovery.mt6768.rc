@@ -1,0 +1,8 @@
+on init
+    setprop sys.usb.configfs 1
+    setprop sys.usb.controller "musb-hdrc"
+    setprop sys.usb.ffs.aio_compat 1
+
+    # The lamu kernel has no configfs MTP function. Prevent recovery from
+    # replacing the working ADB gadget with an unavailable MTP gadget.
+    setprop mtp.crash_check 1
