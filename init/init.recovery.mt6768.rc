@@ -7,9 +7,6 @@ on init
     # replacing the working ADB gadget with an unavailable MTP gadget.
     setprop mtp.crash_check 1
 
-    # Patch the stock OrangeFox FBE menu before recovery parses the theme.
-    exec u:r:recovery:s0 root root -- /sbin/patch-decrypt-ui.sh
-
 # The proprietary lamu KeyMint/Gatekeeper services target the Android 16
 # runtime. They cannot be linked by fox_12.1's Android 12 linker, so the
 # synchronous resyncapex hook starts these services through the mounted

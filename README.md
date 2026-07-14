@@ -23,3 +23,8 @@ OrangeFox attempts to decrypt userdata.
 The Android 16 vold bridge opens metadata encryption and installs the existing
 device-encrypted user-0 key. OrangeFox then accepts the normal Android lock PIN
 through its FBE decrypt action to unlock credential-encrypted storage.
+
+The GitHub Actions workflow applies the device-scoped patch in `patches/` to
+the synced `bootable/recovery` tree. It makes fox_12.1 consume the DE state
+prepared by the Android 16 bridge and populate its native FBE user list before
+showing the PIN prompt.

@@ -45,7 +45,6 @@ PRODUCT_COPY_FILES += \
     $(DEVICE_PATH)/recovery/root/sbin/fsck.f2fs16.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/fsck.f2fs16.sh \
     $(DEVICE_PATH)/recovery/root/sbin/lamu-device-vintf.xml:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/lamu-device-vintf.xml \
     $(DEVICE_PATH)/recovery/root/sbin/lamu-framework-vintf.xml:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/lamu-framework-vintf.xml \
-    $(DEVICE_PATH)/recovery/root/sbin/patch-decrypt-ui.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/patch-decrypt-ui.sh \
     $(DEVICE_PATH)/recovery/root/sbin/resyncapex.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/resyncapex.sh \
     $(DEVICE_PATH)/recovery/root/sbin/vold_prepare_subdirs16.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/vold_prepare_subdirs16.sh \
     $(DEVICE_PATH)/recovery/root/vendor/firmware/ILITEK_FW.hex:$(TARGET_COPY_OUT_RECOVERY)/root/vendor/firmware/ILITEK_FW.hex \

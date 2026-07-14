@@ -96,6 +96,11 @@ bind_android16_helper() {
     mount --bind "${source}" "${target}"
 }
 
+mount_metadata_userdata() {
+    run16 /system_root/system/bin/vdc cryptfs mountFstab \
+        /dev/block/by-name/userdata /data false ""
+}
+
 if [ ! -x "${linker16}" ] || \
    [ ! -x /system_root/system/bin/servicemanager ] || \
    [ ! -x /system_root/system/bin/keystore2 ] || \
@@ -207,9 +212,18 @@ if ! is_mounted /data; then
         mount -t f2fs -o rw,nosuid,nodev,noatime,discard,inlinecrypt \
             /dev/block/mapper/userdata /data
     else
-        run16 /system_root/system/bin/vdc cryptfs mountFstab \
-            /dev/block/by-name/userdata /data false ""
+        mount_metadata_userdata
     fi
+fi
+
+# The first mountFstab call can create the metadata dm target before its
+# KeyMint-backed key has been reloaded. In that state the mapper reads as
+# zeroes and F2FS reports a magic mismatch. A second vold call reloads the
+# existing target with the unwrapped key and mounts userdata successfully.
+if ! is_mounted /data && [ -b /dev/block/mapper/userdata ]; then
+    log_msg "Initial userdata mapper was not mountable; retrying through Android 16 vold"
+    sleep 1
+    mount_metadata_userdata
 fi
 
 if ! is_mounted /data; then

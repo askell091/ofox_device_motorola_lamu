@@ -1,0 +1,54 @@
+diff --git a/partition.cpp b/partition.cpp
+index 3b449bc..3b68968 100644
+--- a/partition.cpp
++++ b/partition.cpp
+@@ -712,11 +712,16 @@ void TWPartition::Setup_Data_Partition(bool Display_Error) {
+ 		Set_FBE_Status();
+ 		Decrypted_Block_Device = crypto_blkdev;
+ 		LOGINFO("Data already decrypted, new block device: '%s'\n", crypto_blkdev);
++		if (android::base::GetProperty("lamu.crypto.compat.ready", "0") == "1") {
++			if (!Mount(false) || !Decrypt_FBE_DE())
++				LOGERR("Unable to finish lamu Android 16 FBE bootstrap\n");
++		} else {
++			DataManager::SetValue(TW_IS_ENCRYPTED, 0);
++		}
+ 		#ifndef OF_FIX_DECRYPTION_ON_DATA_MEDIA
+ 		if (datamedia)
+ 			Setup_Data_Media();
+ 		#endif
+-		DataManager::SetValue(TW_IS_ENCRYPTED, 0);
+ 		DataManager::SetValue(FOX_ENCRYPTED_DEVICE, "1");
+ 	} else if (!Mount(false)) {
+ 		if (Is_Present) {
+@@ -836,7 +841,14 @@ if (TWFunc::Path_Exists("/data/unencrypted/key/version")) {
+ 	int retry_count = 3;
+ 	while (!android::keystore::Decrypt_DE() && --retry_count)
+ 		usleep(2000);
+-	if (retry_count > 0) {
++	bool de_keys_ready = retry_count > 0;
++	if (!de_keys_ready &&
++	    android::base::GetProperty("lamu.crypto.compat.ready", "0") == "1") {
++		property_set("twrp.user.0.decrypt", "0");
++		LOGINFO("Using Android 16 vold-initialized DE keys for lamu\n");
++		de_keys_ready = true;
++	}
++	if (de_keys_ready) {
+ 		PartitionManager.Set_Crypto_State();
+ 		Is_Encrypted = true;
+ 		Is_Decrypted = false;
+diff --git a/partitionmanager.cpp b/partitionmanager.cpp
+index 00db3a1..5ff35b9 100755
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -572,6 +572,11 @@ void TWPartitionManager::Setup_Fstab_Partitions(bool Display_Error) {
+ 					property_set("twrp.apex.loaded", "true");
+ 				}
+ 				TWFunc::check_and_run_script("/sbin/resyncapex.sh", "apex");
++				if (android::base::GetProperty("lamu.crypto.compat.ready", "0") == "1") {
++					TWPartition* dat = Find_Partition_By_Path("/data");
++					if (dat)
++						dat->Partition_Post_Processing(Display_Error);
++				}
+ 	#endif
+ 			}
+ 		}
