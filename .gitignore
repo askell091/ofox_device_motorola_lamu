@@ -1,4 +1,4 @@
-*.log
-*.img
-*.zip
-checkpoint/
+/*.log
+/*.img
+/*.zip
+/checkpoint/
