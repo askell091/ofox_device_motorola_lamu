@@ -10,6 +10,7 @@ filegroup {
     name: "lamu_gatekeeper16_aidl",
     srcs: [
         "crypto/aidl/android/service/gatekeeper/IGateKeeperService.aidl",
+        "crypto/aidl/android/os/IVold.aidl",
     ],
     path: "crypto/aidl",
 }

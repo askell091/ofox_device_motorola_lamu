@@ -15,6 +15,7 @@
 #include <aidl/android/system/keystore2/KeyDescriptor.h>
 #include <aidl/android/system/keystore2/KeyEntryResponse.h>
 #include <android/service/gatekeeper/IGateKeeperService.h>
+#include <android/os/IVold.h>
 #include <binder/IServiceManager.h>
 #include <gatekeeper/GateKeeperResponse.h>
 #include <keymint_support/authorization_set.h>
@@ -38,6 +39,7 @@ constexpr uint32_t kKeystoreIvSize = 12;
 constexpr uint32_t kMaxAliasSize = 4096;
 constexpr uint32_t kMaxCiphertextSize = 64 * 1024;
 constexpr int64_t kLockSettingsNamespace = 103;
+constexpr int32_t kStorageFlagCe = 2;
 
 template <typename T>
 bool ReadScalar(const std::string& input, size_t* offset, T* value) {
@@ -133,9 +135,64 @@ int UnwrapWithKeystore2(const std::string& request_path,
     return 0;
 }
 
+int UnlockWithVold(const std::string& request_path,
+                   const std::string& response_path) {
+    std::string request;
+    if (!android::base::ReadFileToString(request_path, &request)) {
+        return 30;
+    }
+
+    size_t offset = 0;
+    int32_t user_id = 0;
+    uint32_t secret_hex_size = 0;
+    if (!ReadScalar(request, &offset, &user_id) ||
+        !ReadScalar(request, &offset, &secret_hex_size) ||
+        user_id < 0 || secret_hex_size == 0 || secret_hex_size > 256 ||
+        (secret_hex_size & 1) != 0 || offset > request.size() ||
+        request.size() - offset != secret_hex_size) {
+        return 31;
+    }
+
+    auto HexNibble = [](char value) -> int {
+        if (value >= '0' && value <= '9') return value - '0';
+        if (value >= 'a' && value <= 'f') return value - 'a' + 10;
+        if (value >= 'A' && value <= 'F') return value - 'A' + 10;
+        return -1;
+    };
+    std::vector<uint8_t> secret(secret_hex_size / 2);
+    for (size_t i = 0; i < secret.size(); ++i) {
+        int high = HexNibble(request[offset + i * 2]);
+        int low = HexNibble(request[offset + i * 2 + 1]);
+        if (high < 0 || low < 0) return 32;
+        secret[i] = static_cast<uint8_t>((high << 4) | low);
+    }
+
+    auto binder = android::defaultServiceManager()->checkService(
+        android::String16("vold"));
+    auto vold = android::interface_cast<android::os::IVold>(binder);
+    if (vold == nullptr) {
+        return 33;
+    }
+    auto status = vold->unlockCeStorage(user_id, secret);
+    if (!status.isOk()) {
+        return 34;
+    }
+    status = vold->prepareUserStorage(std::nullopt, user_id, kStorageFlagCe);
+    if (!status.isOk()) {
+        return 35;
+    }
+    if (!android::base::WriteStringToFile("1", response_path)) {
+        return 36;
+    }
+    return 0;
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
+    if (argc == 4 && strcmp(argv[1], "unlock") == 0) {
+        return UnlockWithVold(argv[2], argv[3]);
+    }
     if (argc == 4 && strcmp(argv[1], "unwrap") == 0) {
         return UnwrapWithKeystore2(argv[2], argv[3]);
     }
