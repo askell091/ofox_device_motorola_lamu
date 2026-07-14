@@ -13,7 +13,6 @@ cc_binary {
         "crypto/aidl/android/service/gatekeeper/IGateKeeperService.aidl",
         "crypto/lamu_gatekeeper16.cpp",
     ],
-    recovery: true,
     cflags: [
         "-Wall",
         "-Werror",

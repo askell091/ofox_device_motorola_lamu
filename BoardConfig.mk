@@ -122,6 +122,13 @@ TW_INCLUDE_LIBRESETPROP := true
 TW_INCLUDE_REPACKTOOLS := true
 TW_NO_FASTBOOT_BOOT := true
 
+# Build the Android 16 Gatekeeper client as a normal platform binary, then use
+# OrangeFox's relink stage to copy it into recovery. fox_12.1's libbinder has
+# no recovery variant, so declaring the client as recovery: true cannot link.
+TARGET_RECOVERY_DEVICE_MODULES += lamu_gatekeeper16
+TW_RECOVERY_ADDITIONAL_RELINK_BINARY_FILES += \
+    $(TARGET_OUT_EXECUTABLES)/lamu_gatekeeper16
+
 # Crypto / FBE
 #
 # LineageOS 23.2 uses FBE v2 plus metadata encryption on userdata. Enabling
