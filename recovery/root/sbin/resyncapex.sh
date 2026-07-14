@@ -1,12 +1,13 @@
 #!/system/bin/sh
 
 # OrangeFox calls this hook synchronously after mounting system and vendor and
-# before attempting metadata/FBE decryption. The installed Trustonic services
-# are built for Android 16 and therefore need the installed system runtime and
-# servicemanager rather than fox_12.1's Android 12 equivalents.
+# before attempting metadata/FBE decryption. The installed Trustonic services,
+# keystore2 and vold are built for Android 16, so the complete crypto path must
+# use the installed Android 16 runtime instead of fox_12.1's Android 12 one.
 
 log_tag="lamu-crypto"
-runtime_libs="/system_root/system/lib64:/vendor/lib64:/system_root/system/lib64/bootstrap"
+runtime_libs="/system_root/system/lib64:/vendor/lib64:/apex/com.android.i18n/lib64:/system_root/system/lib64/bootstrap"
+linker16="/system_root/system/bin/bootstrap/linker64"
 
 log_msg() {
     log -t "${log_tag}" "$*"
@@ -29,8 +30,79 @@ wait_for_prop() {
     return 1
 }
 
-if [ ! -x /system_root/system/bin/bootstrap/linker64 ] || \
+is_mounted() {
+    grep -q " $1 " /proc/mounts
+}
+
+run16() {
+    LD_LIBRARY_PATH="${runtime_libs}" "${linker16}" "$@"
+}
+
+service_available() {
+    run16 /system_root/system/bin/service check "$1" 2>/dev/null | \
+        grep -q ': found'
+}
+
+wait_for_service() {
+    service="$1"
+    retries="$2"
+
+    while [ "${retries}" -gt 0 ]; do
+        service_available "${service}" && return 0
+        retries=$((retries - 1))
+        sleep 0.1
+    done
+    return 1
+}
+
+mount_recovery_vintf() {
+    if ! is_mounted /vendor/etc/vintf/manifest; then
+        mount -t tmpfs -o ro,nosuid,nodev,noexec tmpfs \
+            /vendor/etc/vintf/manifest || return 1
+    fi
+
+    if ! is_mounted /vendor/etc/vintf/manifest.xml; then
+        mount --bind /sbin/lamu-device-vintf.xml \
+            /vendor/etc/vintf/manifest.xml || return 1
+    fi
+
+    if ! is_mounted /system/etc/vintf; then
+        mount -t tmpfs -o rw,nosuid,nodev,noexec tmpfs \
+            /system/etc/vintf || return 1
+        cp /sbin/lamu-framework-vintf.xml \
+            /system/etc/vintf/manifest.xml || return 1
+        chmod 0444 /system/etc/vintf/manifest.xml
+        mount -o remount,ro /system/etc/vintf || return 1
+    fi
+}
+
+mount_i18n_apex() {
+    is_mounted /apex/com.android.i18n && return 0
+
+    i18n_apex="/system_root/system/apex/com.android.i18n.apex"
+    i18n_image="/tmp/com.android.i18n.img"
+    [ -f "${i18n_apex}" ] || return 1
+
+    mkdir -p /apex/com.android.i18n
+    unzip -p "${i18n_apex}" apex_payload.img >"${i18n_image}" || return 1
+    mount -t ext4 -o loop,ro "${i18n_image}" /apex/com.android.i18n
+}
+
+bind_android16_helper() {
+    source="$1"
+    target="$2"
+
+    is_mounted "${target}" && return 0
+    mount --bind "${source}" "${target}"
+}
+
+if [ ! -x "${linker16}" ] || \
    [ ! -x /system_root/system/bin/servicemanager ] || \
+   [ ! -x /system_root/system/bin/keystore2 ] || \
+   [ ! -x /system_root/system/bin/vold ] || \
+   [ ! -x /system_root/system/bin/vdc ] || \
+   [ ! -x /system_root/system/bin/fsck.f2fs ] || \
+   [ ! -x /system_root/system/bin/vold_prepare_subdirs ] || \
    [ ! -x /vendor/bin/mcDriverDaemon ] || \
    [ ! -x /vendor/bin/hw/android.hardware.security.keymint@3.0-service.trustonic ] || \
    [ ! -x /vendor/bin/hw/android.hardware.gatekeeper-service.trustonic ]; then
@@ -69,6 +141,23 @@ first_api="$(read_prop ro.product.first_api_level /vendor/build.prop)"
 [ -n "${vendor_patch}" ] && resetprop ro.vendor.build.security_patch "${vendor_patch}"
 [ -n "${first_api}" ] && resetprop ro.product.first_api_level "${first_api}"
 
+if ! mount_recovery_vintf; then
+    log_msg "Unable to install Android 12-compatible recovery VINTF manifests"
+    exit 1
+fi
+
+if ! mount_i18n_apex; then
+    log_msg "Unable to mount the installed Android 16 i18n APEX"
+    exit 1
+fi
+
+if ! bind_android16_helper /sbin/fsck.f2fs16.sh /system/bin/fsck.f2fs || \
+   ! bind_android16_helper /sbin/vold_prepare_subdirs16.sh \
+        /system/bin/vold_prepare_subdirs; then
+    log_msg "Unable to install Android 16 vold helper wrappers"
+    exit 1
+fi
+
 setprop ctl.start lamu-mobicore
 if ! wait_for_prop ro.vendor.trustonic.ready true 80; then
     log_msg "mcDriverDaemon did not report Trustonic readiness"
@@ -76,24 +165,67 @@ if ! wait_for_prop ro.vendor.trustonic.ready true 80; then
 fi
 
 # Android 16 libbinder requires the matching servicemanager and its readiness
-# property. Restart keystore2 afterwards so it reconnects to the new context
-# manager and discovers the now-registered HALs.
+# property. Do not clear servicemanager.ready when the compatibility service is
+# already running; this hook may run again after restarting the recovery UI.
 setprop ctl.stop keystore2
 setprop ctl.stop servicemanager
-setprop servicemanager.ready false
-sleep 0.2
-setprop ctl.start lamu-servicemanager16
+if [ "$(getprop init.svc.lamu-servicemanager16)" != "running" ]; then
+    setprop servicemanager.ready false
+    setprop ctl.start lamu-servicemanager16
 
-if ! wait_for_prop servicemanager.ready true 50; then
-    log_msg "Android 16 servicemanager did not become ready"
-    exit 1
+    if ! wait_for_prop servicemanager.ready true 50; then
+        log_msg "Android 16 servicemanager did not become ready"
+        exit 1
+    fi
+else
+    setprop servicemanager.ready true
 fi
 
 setprop ctl.start lamu-keymint16
 setprop ctl.start lamu-gatekeeper16
 sleep 1
-setprop ctl.start keystore2
+
+mkdir -p /tmp/misc/keystore
+if ! service_available android.system.keystore2.IKeystoreService/default; then
+    setprop ctl.start lamu-keystore16
+    if ! wait_for_service android.system.keystore2.IKeystoreService/default 100; then
+        log_msg "Android 16 keystore2 did not register"
+        exit 1
+    fi
+fi
+
+if ! service_available vold; then
+    setprop ctl.start lamu-vold16
+    if ! wait_for_service vold 100; then
+        log_msg "Android 16 vold did not register"
+        exit 1
+    fi
+fi
+
+if ! is_mounted /data; then
+    if [ -b /dev/block/mapper/userdata ]; then
+        mount -t f2fs -o rw,nosuid,nodev,noatime,discard,inlinecrypt \
+            /dev/block/mapper/userdata /data
+    else
+        run16 /system_root/system/bin/vdc cryptfs mountFstab \
+            /dev/block/by-name/userdata /data false ""
+    fi
+fi
+
+if ! is_mounted /data; then
+    log_msg "Android 16 vold was unable to mount metadata-encrypted /data"
+    exit 1
+fi
+
+resetprop ro.crypto.state encrypted
+resetprop ro.crypto.type file
+resetprop ro.crypto.fs_crypto_blkdev /dev/block/mapper/userdata
+
+run16 /system_root/system/bin/vdc cryptfs enablefilecrypto || \
+    log_msg "Android 16 vold could not initialize system-wide FBE keys"
+run16 /system_root/system/bin/vdc cryptfs init_user0 || \
+    log_msg "Android 16 vold could not finish user 0 DE initialization"
 
 setprop lamu.crypto.compat.ready 1
-log_msg "Trustonic KeyMint/Gatekeeper compatibility services started (${runtime_libs})"
+log_msg "Android 16 Trustonic/keystore2/vold compatibility path is ready (${runtime_libs})"
 exit 0

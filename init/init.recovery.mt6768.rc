@@ -7,6 +7,9 @@ on init
     # replacing the working ADB gadget with an unavailable MTP gadget.
     setprop mtp.crash_check 1
 
+    # Patch the stock OrangeFox FBE menu before recovery parses the theme.
+    exec u:r:recovery:s0 root root -- /sbin/patch-decrypt-ui.sh
+
 # The proprietary lamu KeyMint/Gatekeeper services target the Android 16
 # runtime. They cannot be linked by fox_12.1's Android 12 linker, so the
 # synchronous resyncapex hook starts these services through the mounted
@@ -37,3 +40,17 @@ service lamu-gatekeeper16 /system_root/system/bin/bootstrap/linker64 /vendor/bin
     group root system
     seclabel u:r:recovery:s0
     setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/system_root/system/lib64/bootstrap
+
+service lamu-keystore16 /system_root/system/bin/bootstrap/linker64 /system_root/system/bin/keystore2 /tmp/misc/keystore
+    disabled
+    user root
+    group root keystore readproc log
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/apex/com.android.i18n/lib64:/system_root/system/lib64/bootstrap
+
+service lamu-vold16 /system_root/system/bin/bootstrap/linker64 /system_root/system/bin/vold --blkid_context=u:r:recovery:s0 --blkid_untrusted_context=u:r:recovery:s0 --fsck_context=u:r:recovery:s0 --fsck_untrusted_context=u:r:recovery:s0
+    disabled
+    user root
+    group root system reserved_disk
+    seclabel u:r:recovery:s0
+    setenv LD_LIBRARY_PATH /system_root/system/lib64:/vendor/lib64:/apex/com.android.i18n/lib64:/system_root/system/lib64/bootstrap

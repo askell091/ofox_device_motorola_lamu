@@ -1,0 +1,7 @@
+<manifest version="2.0" type="framework">
+    <hal format="aidl">
+        <name>android.system.keystore2</name>
+        <version>5</version>
+        <fqname>IKeystoreService/default</fqname>
+    </hal>
+</manifest>
