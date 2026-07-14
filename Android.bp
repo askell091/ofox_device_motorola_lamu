@@ -8,16 +8,25 @@ soong_namespace {
 
 cc_binary {
     name: "lamu_gatekeeper16",
-    srcs: ["crypto/lamu_gatekeeper16.cpp"],
-    recovery_available: true,
+    srcs: [
+        "crypto/GateKeeperResponse.cpp",
+        "crypto/aidl/android/service/gatekeeper/IGateKeeperService.aidl",
+        "crypto/lamu_gatekeeper16.cpp",
+    ],
+    recovery: true,
     cflags: [
         "-Wall",
         "-Werror",
     ],
+    local_include_dirs: ["crypto/include"],
+    aidl: {
+        local_include_dirs: ["crypto/aidl"],
+    },
     shared_libs: [
         "libbase",
         "libbinder",
-        "libgatekeeper_aidl",
+        "libcutils",
+        "liblog",
         "libutils",
     ],
 }

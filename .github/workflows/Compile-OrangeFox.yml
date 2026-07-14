@@ -145,6 +145,7 @@ jobs:
         else
         lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
         fi
+        test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/lamu_gatekeeper16
 
     - name: Set Release Properties
       run: |
