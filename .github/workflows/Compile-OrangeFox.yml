@@ -143,7 +143,7 @@ jobs:
         if [[ ${{ inputs.MANIFEST_BRANCH }} == '14.1' ]]; then
         lunch twrp_${{ inputs.DEVICE_NAME }}-ap2a-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
         else
-        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka adbd ${{ inputs.BUILD_TARGET }}image
+        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && make clean && mka lamu_gatekeeper16 -j2 && mka adbd ${{ inputs.BUILD_TARGET }}image
         fi
         test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/lamu_gatekeeper16
 

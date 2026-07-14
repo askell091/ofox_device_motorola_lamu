@@ -6,11 +6,19 @@
 soong_namespace {
 }
 
+filegroup {
+    name: "lamu_gatekeeper16_aidl",
+    srcs: [
+        "crypto/aidl/android/service/gatekeeper/IGateKeeperService.aidl",
+    ],
+    path: "crypto/aidl",
+}
+
 cc_binary {
     name: "lamu_gatekeeper16",
     srcs: [
+        ":lamu_gatekeeper16_aidl",
         "crypto/GateKeeperResponse.cpp",
-        "crypto/aidl/android/service/gatekeeper/IGateKeeperService.aidl",
         "crypto/lamu_gatekeeper16.cpp",
     ],
     cflags: [
