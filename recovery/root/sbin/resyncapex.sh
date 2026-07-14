@@ -104,6 +104,7 @@ mount_metadata_userdata() {
 if [ ! -x "${linker16}" ] || \
    [ ! -x /system_root/system/bin/servicemanager ] || \
    [ ! -x /system_root/system/bin/keystore2 ] || \
+   [ ! -x /system_root/system/bin/gatekeeperd ] || \
    [ ! -x /system_root/system/bin/vold ] || \
    [ ! -x /system_root/system/bin/vdc ] || \
    [ ! -x /system_root/system/bin/fsck.f2fs ] || \
@@ -190,6 +191,11 @@ setprop ctl.start lamu-keymint16
 setprop ctl.start lamu-gatekeeper16
 sleep 1
 
+# keystore2 waits for Android's boot-complete property before serving vold.
+# Recovery has no framework to publish it, so publish it after the Trustonic
+# HALs and the Android 16 servicemanager are ready.
+setprop sys.boot_completed 1
+
 mkdir -p /tmp/misc/keystore
 if ! service_available android.system.keystore2.IKeystoreService/default; then
     setprop ctl.start lamu-keystore16
@@ -235,10 +241,31 @@ resetprop ro.crypto.state encrypted
 resetprop ro.crypto.type file
 resetprop ro.crypto.fs_crypto_blkdev /dev/block/mapper/userdata
 
-run16 /system_root/system/bin/vdc cryptfs enablefilecrypto || \
+if ! run16 /system_root/system/bin/vdc cryptfs enablefilecrypto; then
     log_msg "Android 16 vold could not initialize system-wide FBE keys"
-run16 /system_root/system/bin/vdc cryptfs init_user0 || \
+    exit 1
+fi
+
+if ! run16 /system_root/system/bin/vdc cryptfs init_user0; then
     log_msg "Android 16 vold could not finish user 0 DE initialization"
+    exit 1
+fi
+
+if [ ! -d /data/system/users ] || \
+   [ ! -d /data/system_de/0 ] || \
+   [ ! -d /data/misc_de/0 ] || \
+   [ ! -d /data/user_de/0 ]; then
+    log_msg "Android 16 vold returned success without installing user 0 DE policies"
+    exit 1
+fi
+
+if ! service_available android.service.gatekeeper.IGateKeeperService; then
+    setprop ctl.start lamu-gatekeeperd16
+    if ! wait_for_service android.service.gatekeeper.IGateKeeperService 100; then
+        log_msg "Android 16 gatekeeperd did not register"
+        exit 1
+    fi
+fi
 
 setprop lamu.crypto.compat.ready 1
 log_msg "Android 16 Trustonic/keystore2/vold compatibility path is ready (${runtime_libs})"

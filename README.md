@@ -21,10 +21,13 @@ and the installed i18n APEX bridge the remaining runtime differences before
 OrangeFox attempts to decrypt userdata.
 
 The Android 16 vold bridge opens metadata encryption and installs the existing
-device-encrypted user-0 key. OrangeFox then accepts the normal Android lock PIN
-through its FBE decrypt action to unlock credential-encrypted storage.
+device-encrypted user-0 key. The installed Android 16 `gatekeeperd` translates
+the recovery's framework Binder request to the device's AIDL Gatekeeper HAL,
+allowing OrangeFox to validate the normal Android lock PIN before unlocking
+credential-encrypted storage.
 
-The GitHub Actions workflow applies the device-scoped patch in `patches/` to
-the synced `bootable/recovery` tree. It makes fox_12.1 consume the DE state
-prepared by the Android 16 bridge and populate its native FBE user list before
-showing the PIN prompt.
+The GitHub Actions workflow applies the device-scoped patches in `patches/` to
+the synced `bootable/recovery` and `system/vold` trees. They make fox_12.1
+consume the DE state prepared by the Android 16 bridge, populate its native FBE
+user list once, retain the metadata-encrypted mapper, and use `gatekeeperd` on
+lamu while retaining the original HIDL Gatekeeper path for other devices.
