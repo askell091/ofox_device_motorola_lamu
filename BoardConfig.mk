@@ -77,7 +77,9 @@ AB_OTA_PARTITIONS := \
 
 BOARD_SUPER_PARTITION_SIZE := 8589934592
 BOARD_SUPER_PARTITION_GROUPS := motorola_dynamic_partitions
-BOARD_MOTOROLA_DYNAMIC_PARTITIONS_PARTITION_LIST := odm odm_dlkm product system system_dlkm system_ext vendor vendor_dlkm
+# fox_12.1 does not model system_dlkm as a buildable logical partition.
+# Recovery can still discover and mount the existing partition through fstab.
+BOARD_MOTOROLA_DYNAMIC_PARTITIONS_PARTITION_LIST := odm odm_dlkm product system system_ext vendor vendor_dlkm
 BOARD_MOTOROLA_DYNAMIC_PARTITIONS_SIZE := $(shell expr $(BOARD_SUPER_PARTITION_SIZE) - 4194304)
 
 BOARD_USES_METADATA_PARTITION := true
