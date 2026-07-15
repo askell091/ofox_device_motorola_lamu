@@ -4,6 +4,12 @@ on init
     setprop sys.usb.ffs.aio_compat 1
     setprop mtp.crash_check 0
 
+# lamu exposes its haptics motor through the LED transient trigger. The
+# recovery module list loads the driver before this event; selecting the
+# trigger creates duration/activate/state for OrangeFox's haptics backend.
+on boot
+    write /sys/class/leds/vibrator/trigger "transient"
+
 # lamu does not provide the legacy CONFIG_USB_CONFIGFS_F_MTP function, but it
 # does provide the generic FunctionFS gadget used by OrangeFox's MTP backend.
 # The common recovery init creates ffs.adb and ffs.fastboot; add the missing

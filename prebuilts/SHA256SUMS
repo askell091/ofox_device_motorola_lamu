@@ -44,6 +44,8 @@ ef1288248c958a57d2d5e6e56e468fe41cf9f101aea53a5585576e3c0103c76e  prebuilts/kern
 0d58847527ff5f4b91fc61b0c5f4fb572b3dd59a4fcd415b978a7f5f985e63dc  prebuilts/kernel/6.6/modules/emimpu.ko
 8bf270628ad8939998b59ad65024e21613cfcb04a09a62e6a0133ce2b250cc97  prebuilts/kernel/6.6/modules/extcon-mtk-usb.ko
 59d760fa70cf3c2017897250e29fdfe238669a034a5f80136f6976d9a1cf2d8a  prebuilts/kernel/6.6/modules/extdev_io_class.ko
+92f5d02343950c03c5e66310528b927969062d04c52312d76c0c7ef72fc9c38b  prebuilts/kernel/6.6/modules/flashlight.ko
+3a18641ae7b425b985b1a811aefd4dc788749c3256021aefdb96540afbba916e  prebuilts/kernel/6.6/modules/flashlights-aw36515.ko
 9d4224bf741254e5081a1d628f8e78d17ce490be1a1da068f0ac6efd23cb8429  prebuilts/kernel/6.6/modules/husb320.ko
 e21ccf8dc2ec312262e3f97c62638cb92584754080474d4e0df095f81cc11699  prebuilts/kernel/6.6/modules/i2c-mt65xx.ko
 67e7199d5115833e0494172715da77200055517147df56ba63df023ab549526f  prebuilts/kernel/6.6/modules/iommu_debug.ko

@@ -1,0 +1,20 @@
+diff --git a/minuitwrp/events.cpp b/minuitwrp/events.cpp
+index e497df6..3c732b3 100644
+--- a/minuitwrp/events.cpp
++++ b/minuitwrp/events.cpp
+@@ -62,6 +62,7 @@ static std::atomic_int vib_on_count = 0;
+ #define VIBRATOR_TIME_MS    50
+ 
+ #define LEDS_HAPTICS_DURATION_FILE	"/sys/class/leds/vibrator/duration"
++#define LEDS_HAPTICS_STATE_FILE		"/sys/class/leds/vibrator/state"
+ #define LEDS_HAPTICS_ACTIVATE_FILE	"/sys/class/leds/vibrator/activate"
+ 
+ #ifndef SYN_REPORT
+@@ -183,6 +184,7 @@ int vibrate(int timeout_ms)
+     }
+ #else
+     if (std::ifstream(LEDS_HAPTICS_ACTIVATE_FILE).good()) {
++        write_to_file(LEDS_HAPTICS_STATE_FILE, "1");
+         write_to_file(LEDS_HAPTICS_DURATION_FILE, tout);
+         write_to_file(LEDS_HAPTICS_ACTIVATE_FILE, "1");
+     } else
