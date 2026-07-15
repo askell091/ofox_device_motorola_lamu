@@ -44,6 +44,27 @@ on property:sys.usb.ffs.mtp.ready=1 && property:sys.usb.ffs.ready=1 && property:
 on property:sys.usb.config=none && property:sys.usb.configfs=1
     rm /config/usb_gadget/g1/configs/b.1/f2
 
+# The full MT6768 thermal_monitor module pulls in PPM and CPU hotplug, which is
+# unsafe in recovery. Seed a calibrated VPROC PMIC temperature before the
+# recovery UI starts, then keep it refreshed without loading thermal modules.
+on post-fs
+    exec_start lamu-vproc-temp-init
+    start lamu-vproc-temp
+
+service lamu-vproc-temp-init /system/bin/sh /sbin/lamu-vproc-temp.sh --once
+    disabled
+    oneshot
+    user root
+    group root
+    seclabel u:r:recovery:s0
+
+service lamu-vproc-temp /system/bin/sh /sbin/lamu-vproc-temp.sh
+    disabled
+    oneshot
+    user root
+    group root
+    seclabel u:r:recovery:s0
+
 # The proprietary lamu KeyMint/Gatekeeper services target the Android 16
 # runtime. They cannot be linked by fox_12.1's Android 12 linker, so the
 # synchronous resyncapex hook starts these services through the mounted
