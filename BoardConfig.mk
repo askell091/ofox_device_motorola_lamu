@@ -106,7 +106,7 @@ TARGET_COPY_OUT_VENDOR_DLKM := vendor_dlkm
 # Recovery
 TARGET_RECOVERY_DENSITY := xhdpi
 TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
-TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/init/fstab.mt6768
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/init/recovery.fstab
 TW_THEME := portrait_hdpi
 TW_FRAMERATE := 60
 TW_BRIGHTNESS_PATH := "/sys/class/leds/lcd-backlight/brightness"
