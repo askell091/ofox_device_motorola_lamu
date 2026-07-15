@@ -44,6 +44,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     bootable/recovery/gui/theme/extra-languages/fonts/DroidSansFallback.ttf:$(TARGET_COPY_OUT_RECOVERY)/root/twres/fonts/DroidSansFallback.ttf \
     $(DEVICE_PATH)/init/init.recovery.mt6768.rc:$(TARGET_COPY_OUT_RECOVERY)/root/init.recovery.mt6768.rc \
+    $(DEVICE_PATH)/recovery/root/twres/images/Default/About/maintainer.png:$(TARGET_COPY_OUT_RECOVERY)/root/twres/images/Default/About/maintainer.png \
     $(DEVICE_PATH)/recovery/root/sbin/fsck.f2fs16.sh:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/fsck.f2fs16.sh \
     $(DEVICE_PATH)/recovery/root/sbin/lamu-device-vintf.xml:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/lamu-device-vintf.xml \
     $(DEVICE_PATH)/recovery/root/sbin/lamu-framework-vintf.xml:$(TARGET_COPY_OUT_RECOVERY)/root/sbin/lamu-framework-vintf.xml \
