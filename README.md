@@ -31,3 +31,12 @@ the synced `bootable/recovery` and `system/vold` trees. They make fox_12.1
 consume the DE state prepared by the Android 16 bridge, populate its native FBE
 user list once, retain the metadata-encrypted mapper, and use `gatekeeperd` on
 lamu while retaining the original HIDL Gatekeeper path for other devices.
+
+## A/B boot control
+
+The installed Android 16 system uses an AIDL Boot Control service, but the
+Android 12 recovery core consumes HIDL. The tree supplies a recovery-native
+HIDL 1.2 service, which also serves the inherited 1.1 and 1.0 interfaces. Slot
+activation updates the standard A/B metadata and the MediaTek eMMC boot region,
+then verifies the hardware selection and attempts to roll metadata back on
+failure.

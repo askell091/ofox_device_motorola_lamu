@@ -167,7 +167,9 @@ jobs:
         if [[ ${{ inputs.MANIFEST_BRANCH }} == '14.1' ]]; then
         lunch twrp_${{ inputs.DEVICE_NAME }}-ap2a-eng && mka adbd ${{ inputs.BUILD_TARGET }}image
         else
-        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && mka lamu_gatekeeper16 -j2 && mka adbd ${{ inputs.BUILD_TARGET }}image
+        lunch twrp_${{ inputs.DEVICE_NAME }}-eng && mka lamu_gatekeeper16 lamu_bootctrl12 -j2 && mka adbd ${{ inputs.BUILD_TARGET }}image
+        test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/hw/lamu_bootctrl12
+        test -f out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/etc/vintf/manifest/lamu_bootctrl12.xml
         fi
         test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/lamu_gatekeeper16
 

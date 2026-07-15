@@ -42,3 +42,46 @@ cc_binary {
         "libutils",
     ],
 }
+
+cc_defaults {
+    name: "lamu_bootctrl_defaults",
+    srcs: ["bootctrl/emmc_bootpart.cpp"],
+    cflags: [
+        "-D_FILE_OFFSET_BITS=64",
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+    shared_libs: [
+        "android.hardware.boot@1.2",
+        "libbase",
+        "liblog",
+    ],
+    static_libs: [
+        "libboot_control",
+        "libbootloader_message_vendor",
+        "libfstab",
+    ],
+}
+
+// fox_12.1 consumes the HIDL Boot Control interface. LineageOS 23.2 uses an
+// Android 16 AIDL service instead, so provide a recovery-native HIDL bridge
+// that retains MediaTek's required eMMC boot-region switch.
+cc_binary {
+    name: "lamu_bootctrl12",
+    defaults: ["lamu_bootctrl_defaults"],
+    recovery: true,
+    relative_install_path: "hw",
+    vintf_fragments: ["bootctrl/lamu_bootctrl12.xml"],
+    srcs: [
+        "bootctrl/BootControl.cpp",
+        "bootctrl/service.cpp",
+    ],
+    shared_libs: [
+        "android.hardware.boot@1.0",
+        "android.hardware.boot@1.1",
+        "libhardware",
+        "libhidlbase",
+        "libutils",
+    ],
+}

@@ -9,6 +9,16 @@ on init
 # trigger creates duration/activate/state for OrangeFox's haptics backend.
 on boot
     write /sys/class/leds/vibrator/trigger "transient"
+    start lamu-bootctrl12
+
+# fox_12.1 uses the HIDL Boot Control API, while the installed Android 16 ROM
+# exposes an AIDL service that this recovery core cannot consume. Start the
+# recovery-native bridge early so slot and snapshot operations have a backend.
+service lamu-bootctrl12 /system/bin/hw/lamu_bootctrl12
+    disabled
+    user root
+    group root
+    seclabel u:r:recovery:s0
 
 # lamu does not provide the legacy CONFIG_USB_CONFIGFS_F_MTP function, but it
 # does provide the generic FunctionFS gadget used by OrangeFox's MTP backend.
