@@ -168,8 +168,19 @@ jobs:
         lunch twrp_${{ inputs.DEVICE_NAME }}-ap2a-eng && mka adbd ${{ inputs.BUILD_TARGET }}image
         else
         lunch twrp_${{ inputs.DEVICE_NAME }}-eng && mka lamu_gatekeeper16 lamu_bootctrl12 -j2 && mka adbd ${{ inputs.BUILD_TARGET }}image
-        test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/hw/lamu_bootctrl12
-        test -f out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/etc/vintf/manifest/lamu_bootctrl12.xml
+        recovery_root=out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root
+        if [[ ! -x "${recovery_root}/system/bin/hw/lamu_bootctrl12" ]]; then
+        echo '::error::lamu_bootctrl12 was not installed in the recovery ramdisk'
+        exit 1
+        fi
+        if [[ ! -f "${recovery_root}/vendor/etc/vintf/manifest/android.hardware.boot@1.2.xml" ]]; then
+        echo '::error::the recovery HIDL Boot Control manifest is missing'
+        exit 1
+        fi
+        if ! grep -q '@1.2::IBootControl/default' "${recovery_root}/sbin/lamu-device-vintf.xml"; then
+        echo '::error::the post-mount synthetic device manifest omits HIDL Boot Control'
+        exit 1
+        fi
         fi
         test -x out/target/product/${{ inputs.DEVICE_NAME }}/recovery/root/system/bin/lamu_gatekeeper16
 

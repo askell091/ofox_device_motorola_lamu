@@ -72,7 +72,6 @@ cc_binary {
     defaults: ["lamu_bootctrl_defaults"],
     recovery: true,
     relative_install_path: "hw",
-    vintf_fragments: ["bootctrl/lamu_bootctrl12.xml"],
     srcs: [
         "bootctrl/BootControl.cpp",
         "bootctrl/service.cpp",

@@ -1,4 +1,11 @@
 <manifest version="2.0" type="device">
+    <!-- Keep the recovery-native HIDL service declared after the Android 16
+         vendor manifest is replaced for FBE decryption. -->
+    <hal format="hidl">
+        <name>android.hardware.boot</name>
+        <transport>hwbinder</transport>
+        <fqname>@1.2::IBootControl/default</fqname>
+    </hal>
     <hal format="aidl">
         <name>android.hardware.security.keymint</name>
         <version>1</version>
