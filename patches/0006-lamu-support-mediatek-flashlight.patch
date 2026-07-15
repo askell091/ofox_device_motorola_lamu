@@ -10,7 +10,7 @@ index 42e3079..e366ffc 100755
 +		// MediaTek's flashlight core exposes a structured torch control instead
 +		// of an LED-class brightness node. lamu's AW36515 is channel 0.
 +		const std::string mtk_torch =
-+				"/sys/class/flashlight/flashlight/flashlight_torch";
++				"/sys/class/flashlight_core/flashlight/flashlight_torch";
 +		if (TWFunc::Path_Exists(mtk_torch)) {
 +			const bool turn_on = fl_used != "1";
 +			if (!TWFunc::write_to_file(mtk_torch,
