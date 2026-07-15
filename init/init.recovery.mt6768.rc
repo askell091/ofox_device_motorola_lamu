@@ -2,10 +2,41 @@ on init
     setprop sys.usb.configfs 1
     setprop sys.usb.controller "musb-hdrc"
     setprop sys.usb.ffs.aio_compat 1
+    setprop mtp.crash_check 0
 
-    # The lamu kernel has no configfs MTP function. Prevent recovery from
-    # replacing the working ADB gadget with an unavailable MTP gadget.
-    setprop mtp.crash_check 1
+# lamu does not provide the legacy CONFIG_USB_CONFIGFS_F_MTP function, but it
+# does provide the generic FunctionFS gadget used by OrangeFox's MTP backend.
+# The common recovery init creates ffs.adb and ffs.fastboot; add the missing
+# MTP instance after configfs is initialized.
+on post-fs && property:sys.usb.configfs=1
+    mkdir /config/usb_gadget/g1/functions/ffs.mtp
+    write /config/usb_gadget/g1/functions/ffs.mtp/os_desc/interface.MTP/compatible_id "MTP"
+    write /config/usb_gadget/g1/os_desc/use 1
+    write /config/usb_gadget/g1/os_desc/b_vendor_code 0x1
+    write /config/usb_gadget/g1/os_desc/qw_sign "MSFT100"
+    symlink /config/usb_gadget/g1/configs/b.1 /config/usb_gadget/g1/os_desc/b.1
+    mkdir /dev/usb-ffs/mtp 0770 root root
+    mount functionfs mtp /dev/usb-ffs/mtp rmode=0770,fmode=0660,uid=0,gid=0,no_disconnect=1
+
+# OrangeFox starts its in-process FunctionFS MTP server after selecting the
+# mtp,adb composition. Keep adbd alive and bind both ready FunctionFS instances
+# to the same gadget so enabling MTP does not sacrifice recovery ADB.
+on property:sys.usb.config=mtp,adb && property:sys.usb.configfs=1
+    start adbd
+
+on property:sys.usb.ffs.mtp.ready=1 && property:sys.usb.ffs.ready=1 && property:sys.usb.config=mtp,adb && property:sys.usb.configfs=1
+    write /config/usb_gadget/g1/idVendor 0x18D1
+    write /config/usb_gadget/g1/idProduct 0x4EE2
+    write /config/usb_gadget/g1/configs/b.1/strings/0x409/configuration "mtp_adb"
+    symlink /config/usb_gadget/g1/functions/ffs.mtp /config/usb_gadget/g1/configs/b.1/f1
+    symlink /config/usb_gadget/g1/functions/ffs.adb /config/usb_gadget/g1/configs/b.1/f2
+    write /config/usb_gadget/g1/UDC ${sys.usb.controller}
+    setprop sys.usb.state ${sys.usb.config}
+
+# The common recovery rule removes f1 when switching to "none". Remove the
+# second link as well so disabling and re-enabling MTP is repeatable.
+on property:sys.usb.config=none && property:sys.usb.configfs=1
+    rm /config/usb_gadget/g1/configs/b.1/f2
 
 # The proprietary lamu KeyMint/Gatekeeper services target the Android 16
 # runtime. They cannot be linked by fox_12.1's Android 12 linker, so the
