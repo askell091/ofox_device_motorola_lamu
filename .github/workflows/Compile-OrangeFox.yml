@@ -134,6 +134,10 @@ jobs:
           ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}/patches/0007-lamu-fix-apex-loop-setup.patch
         git -C bootable/recovery apply \
           ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}/patches/0007-lamu-fix-apex-loop-setup.patch
+        git -C bootable/recovery apply --check \
+          ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}/patches/0008-lamu-make-post-decrypt-bind-idempotent.patch
+        git -C bootable/recovery apply \
+          ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}/patches/0008-lamu-make-post-decrypt-bind-idempotent.patch
         git -C system/vold apply --check \
           ${GITHUB_WORKSPACE}/OrangeFox/fox_${{ inputs.MANIFEST_BRANCH }}/${{ inputs.DEVICE_PATH }}/patches/0002-lamu-use-android16-gatekeeperd.patch
         git -C system/vold apply \

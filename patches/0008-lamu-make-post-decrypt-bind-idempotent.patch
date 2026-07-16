@@ -1,0 +1,27 @@
+diff --git a/partitionmanager.cpp b/partitionmanager.cpp
+--- a/partitionmanager.cpp
++++ b/partitionmanager.cpp
+@@ -2206,8 +2206,21 @@ void TWPartitionManager::Post_Decrypt(const string& Block_Device) {
+ 		Update_System_Details();
+ 		Output_Partition(dat);
+ 		if (!android::base::StartsWith(dat->Actual_Block_Device, "/dev/block/mmcblk")) {
+-		if (!dat->Bind_Mount(false))
+-			LOGERR("Unable to bind mount /sdcard to %s\n", dat->Storage_Path.c_str());
++			/*
++			 * The Android 16 bootstrap can mount data before credential
++			 * decryption, so Setup_Data_Media may already have bound its
++			 * storage path on /sdcard.  Replace every existing layer before
++			 * creating the final post-decrypt bind; otherwise repeated setup
++			 * leaves stacked mounts that a single unmount cannot release.
++			 */
++			int detached_mounts = 0;
++			while (!dat->Symlink_Mount_Point.empty() &&
++			       umount2(dat->Symlink_Mount_Point.c_str(), MNT_DETACH) == 0)
++				detached_mounts++;
++			LOGINFO("Detached %d existing storage bind mount(s) from %s\n",
++				detached_mounts, dat->Symlink_Mount_Point.c_str());
++			if (!dat->Bind_Mount(false))
++				LOGERR("Unable to bind mount /sdcard to %s\n", dat->Storage_Path.c_str());
+ 		}
+ 	} else
+ 		LOGERR("Unable to locate data partition.\n");
