@@ -1,0 +1,86 @@
+diff --git a/Decrypt.cpp b/Decrypt.cpp
+index b4fabdf..ee07f75 100755
+--- a/Decrypt.cpp
++++ b/Decrypt.cpp
+@@ -716,6 +716,66 @@ static bool unwrap_with_android16_keystore(
+ 	return true;
+ }
+ 
++static bool unlock_with_android16_vold(
++		const userid_t user_id, const std::string& secret_hex) {
++	if (secret_hex.empty() || secret_hex.size() > UINT32_MAX) return false;
++
++	char request_path[] = "/tmp/lamu-vold-request-XXXXXX";
++	char response_path[] = "/tmp/lamu-vold-response-XXXXXX";
++	int request_fd = mkstemp(request_path);
++	if (request_fd < 0) return false;
++	int response_fd = mkstemp(response_path);
++	if (response_fd < 0) {
++		close(request_fd);
++		unlink(request_path);
++		return false;
++	}
++	close(response_fd);
++
++	int32_t vold_user_id = user_id;
++	uint32_t secret_size = secret_hex.size();
++	bool request_ok = write_all(request_fd, &vold_user_id, sizeof(vold_user_id)) &&
++		write_all(request_fd, &secret_size, sizeof(secret_size)) &&
++		write_all(request_fd, secret_hex.data(), secret_hex.size());
++	if (fsync(request_fd) != 0) request_ok = false;
++	close(request_fd);
++	if (!request_ok) {
++		unlink(request_path);
++		unlink(response_path);
++		return false;
++	}
++
++	pid_t child = fork();
++	if (child == 0) {
++		setenv("LD_LIBRARY_PATH",
++			"/system_root/system/lib64:/vendor/lib64:/apex/com.android.i18n/lib64:"
++			"/system_root/system/lib64/bootstrap:/system/lib64", 1);
++		execl("/system_root/system/bin/bootstrap/linker64", "linker64",
++			"/system/bin/lamu_gatekeeper16", "unlock", request_path,
++			response_path, static_cast<char*>(nullptr));
++		_exit(127);
++	}
++
++	int status = 0;
++	bool helper_ok = child > 0;
++	while (helper_ok && waitpid(child, &status, 0) < 0) {
++		if (errno != EINTR) helper_ok = false;
++	}
++	if (helper_ok && WIFEXITED(status) && WEXITSTATUS(status) != 0)
++		printf("Android 16 vold helper exited with status %d\n",
++			WEXITSTATUS(status));
++	helper_ok = helper_ok && WIFEXITED(status) && WEXITSTATUS(status) == 0;
++
++	std::string response;
++	if (helper_ok) {
++		helper_ok = android::base::ReadFileToString(response_path, &response) &&
++			response == "1";
++	}
++	unlink(request_path);
++	unlink(response_path);
++	return helper_ok;
++}
++
+ static bool verify_with_android16_gatekeeper(
+ 		const userid_t user_id, const void* password_handle,
+ 		const uint32_t handle_size, const void* password_token,
+@@ -796,6 +856,14 @@ bool Free_Return(bool retval, void* weaver_key, password_data_struct* pwd) {
+ 
+ bool Decrypt_CE_storage(const userid_t user_id, int token, const std::string& secret) {
+ 	printf("Attempting to unlock user storage\n");
++	if (android::base::GetProperty("lamu.crypto.compat.ready", "0") == "1") {
++		if (!unlock_with_android16_vold(user_id, secret)) {
++			printf("Android 16 vold failed to unlock user storage\n");
++			return false;
++		}
++		printf("User %i Decrypted Successfully through Android 16 vold!\n", user_id);
++		return true;
++	}
+ 	int flags = android::os::IVold::STORAGE_FLAG_CE;
+ 	if (!fscrypt_unlock_user_key(user_id, token, secret)) {
+ 		printf("fscrypt_unlock_user_key returned fail\n");
